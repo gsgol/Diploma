@@ -82,18 +82,22 @@ async def Chatbot(connection):
                                 prompt = result['message']['text'].replace("/ask", f'создай запрос на языке PostgreSQL для базы данных {base} для ответа на вопрос ')
                                 bot_response = openAI(f"{prompt}").replace("\n", " ")
                                 names = ""
-                                cursor.execute(f"{bot_response}")
-                                for i in cursor.description:
-                                    names += i.name + " "
-                                resulted_names = []
-                                resulted_names.append(names.split())
-                                resulted_names.extend(cursor.fetchall())
-                                resulted_names = tabulate(resulted_names, tablefmt='pipe')
-                                resulted_names = "<pre>\n" + resulted_names + "\n</pre>"
-                                await telegram_bot_sendtable(resulted_names,chat_id)
+                                try:
+                                    cursor.execute(f"{bot_response}")
+                                    for i in cursor.description:
+                                        names += i.name + " "
+                                    resulted_names = []
+                                    resulted_names.append(names.split())
+                                    resulted_names.extend(cursor.fetchall())
+                                    resulted_names = tabulate(resulted_names, tablefmt='pipe')
+                                    resulted_names = "<pre>\n" + resulted_names + "\n</pre>"
+                                    await telegram_bot_sendtable(resulted_names,chat_id)
+                                except:
+                                    print(bot_response)
+                                    await telegram_bot_sendmessage("Неверный запрос", chat_id)
                                 cursor.close()
                             else:
-                                await telegram_bot_sendmessage("Вы не подключены ни к одно базе данных", chat_id)
+                                await telegram_bot_sendmessage("Вы не подключены ни к одной базе данных", chat_id)
                             
                         if '/login' in result['message']['text']:
                             with open(filename, 'w') as f:
@@ -111,7 +115,7 @@ async def Chatbot(connection):
                                 return "connected"
                             except Exception as e: 
                                 await telegram_bot_sendmessage("Ошибка подключения", chat_id)      
-                        if '/help' in result['message']['text']:
+                        if ('/help' or '/start') in result['message']['text']:
                             with open(filename, 'w') as f:
                                 f.write(last_update)
                             await telegram_bot_sendmessage('''Добро пожаловать в бот помощник для SQL запросов\nСписок комманд бота:\n /ask - команда для запроса в базу данных\n/login  - команда для подключения к определенной базе данных (формат ввода /login логин пароль база данных) \n/end - команда для завершения рабочей сессии\n/help - команда для вывода сообщения со справочной информацией\nТакже можно отправить файл формата xlsx с данными и именем таблицы в которую записать данные''', chat_id)
@@ -129,15 +133,19 @@ async def Chatbot(connection):
                         if(connection):
                                 cursor = connect.cursor()
                                 table = result["message"]["caption"]
-                                file_info = await bot.get_file(result["message"]["document"]["file_id"])
-                                filepath = cwd + '\\new_file.xlsx'
-                                downloaded_file = await bot.download_file(file_info.file_path, filepath)
-                                temp = pd.read_excel(filepath)
-                                stringus = temp.to_string(index=False)
-                                mod_stringus = f'создай запрос для таблицы {table} для добавления данных {stringus}'
-                                query = openAI(f"{mod_stringus}")
-                                cursor.execute(query)
-                                await telegram_bot_sendmessage("Данные записаны", chat_id)
+                                try:
+                                    file_info = await bot.get_file(result["message"]["document"]["file_id"])
+                                    filepath = cwd + '\\new_file.xlsx'
+                                    downloaded_file = await bot.download_file(file_info.file_path, filepath)
+                                    temp = pd.read_excel(filepath)
+                                    stringus = temp.to_string(index=False)
+                                    mod_stringus = f'создай запрос для таблицы {table} для добавления данных {stringus}'
+                                    query = openAI(f"{mod_stringus}")
+                                    cursor.execute(query)
+                                    await telegram_bot_sendmessage("Данные записаны", chat_id)
+                                except:
+                                    await telegram_bot_sendmessage("Неверные данные", chat_id)
+                                
                                 connect.commit()
                         else:
                             await telegram_bot_sendmessage("Вы не подключены ни к одно базе данных", chat_id)
