@@ -95,7 +95,8 @@ async def Chatbot(connection):
                                 except:
                                     print(bot_response)
                                     await telegram_bot_sendmessage("Неверный запрос", chat_id)
-                                cursor.close()
+                                finally:
+                                    cursor.close()
                             else:
                                 await telegram_bot_sendmessage("Вы не подключены ни к одной базе данных", chat_id)
                             
@@ -145,8 +146,8 @@ async def Chatbot(connection):
                                     await telegram_bot_sendmessage("Данные записаны", chat_id)
                                 except:
                                     await telegram_bot_sendmessage("Неверные данные", chat_id)
-                                
-                                connect.commit()
+                                finally:
+                                    connect.commit()
                         else:
                             await telegram_bot_sendmessage("Вы не подключены ни к одно базе данных", chat_id)
 
