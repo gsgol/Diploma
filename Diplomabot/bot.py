@@ -3,11 +3,9 @@ import json
 import os
 from openai import OpenAI
 import psycopg2
-from psycopg2 import Error
 from tabulate import tabulate
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot
 from aiogram.enums.parse_mode import ParseMode
-import re
 import asyncio
 import pandas as pd
 import Diplomabot.config
